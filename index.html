@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>GIS-Toolbox.com</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Free browser-based GIS toolkit. Import, transform, visualize, and export geospatial data — Shapefile, GeoJSON, KML, KMZ, CSV, Excel & more. No install, no server, no signup required.">
+    <meta name="keywords" content="GIS, geospatial, map, shapefile, geojson, kml, kmz, csv, excel, converter, data, toolbox, free, online, transform, export, import, spatial analysis, coordinates, leaflet">
+    <meta name="author" content="Ryan Romney">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://gis-toolbox.com/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://gis-toolbox.com/">
+    <meta property="og:title" content="GIS Toolbox — GIS & Data Tools">
+    <meta property="og:description" content="Import, transform, visualize, and export geospatial data right in your browser. Supports Shapefile, GeoJSON, KML, KMZ, CSV, Excel & more. Free and open source.">
+    <meta property="og:image" content="https://gis-toolbox.com/icons/PWAicon.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="GIS Toolbox">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GIS Toolbox — GIS & Data Tools">
+    <meta name="twitter:description" content="Import, transform, visualize, and export geospatial data right in your browser. No install, no server, no signup.">
+    <meta name="twitter:image" content="https://gis-toolbox.com/icons/PWAicon.png">
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1c1c1e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GIS Toolbox">
+    <link rel="apple-touch-icon" href="icons/PWAicon.png">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZTHRF9QMPV');
+    </script>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "GIS Toolbox",
+        "url": "https://gis-toolbox.com",
+        "description": "Free browser-based GIS toolkit. Import, transform, visualize, and export geospatial data — Shapefile, GeoJSON, KML, KMZ, CSV, Excel & more.",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires a modern browser with JavaScript enabled",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "author": {
+            "@type": "Person",
+            "name": "Ryan Romney"
+        },
+        "softwareVersion": "1.12",
+        "featureList": [
+            "Import Shapefile, GeoJSON, KML, KMZ, CSV, Excel",
+            "Export to GeoJSON, KML, KMZ, CSV, Excel, JSON",
+            "Interactive map visualization with Leaflet",
+            "Data transformation and field editing",
+            "Coordinate conversion tools",
+            "Spatial analysis with Turf.js",
+            "Photo geotagging and mapping",
+            "ArcGIS REST service import",
+            "Draw and create features on map",
+            "Works offline — no server required"
+        ]
+    }
+    </script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="anonymous">
+
+    <!-- App CSS -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/mobile.css">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="icons/favicon.png">
+</head>
+<body>
+    <!-- ================================ -->
+    <!-- HEADER                           -->
+    <!-- ================================ -->
+    <header class="header">
+        <div class="header-left">
+            <span class="header-logo"><img src="icons/TitleIcon.png" alt="GIS-Toolbox.com" width="36" height="36"></span>
+            <h1 class="header-title">GIS-Toolbox<span class="title-com">.com</span></h1>
+        </div>
+        <div class="header-center">
+            <button class="btn btn-secondary btn-sm" id="btn-import">
+                <span class="btn-icon-text">📂</span><span>Import</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-fence" title="Draw a fence on the map — all imports will be filtered to this area">
+                <span class="btn-icon-text">⛶</span><span>Import Fence</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-photo-mapper">
+                <span class="btn-icon-text">📷</span><span>Photos</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-arcgis">
+                <span class="btn-icon-text">🌐</span><span>ArcGIS</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-draw-layer">
+                <span class="btn-icon-text">✏️</span><span>Draw</span>
+            </button>
+            <div class="header-sep"></div>
+            <button class="btn btn-ghost btn-sm" id="btn-undo" disabled title="Undo">↩</button>
+            <button class="btn btn-ghost btn-sm" id="btn-redo" disabled title="Redo">↪</button>
+            <button class="btn btn-secondary btn-sm hidden" id="btn-merge">Merge Layers</button>
+        </div>
+        <div class="header-right">
+            <!-- Mobile overflow menu button (hidden on desktop) -->
+            <button class="btn btn-ghost btn-sm mobile-menu-btn" id="btn-mobile-menu" title="Menu">☰</button>
+            <select id="basemap-select" class="btn-sm" title="Basemap">
+                <option value="osm">Street Map</option>
+                <option value="light">Light / Gray</option>
+                <option value="dark">Dark</option>
+                <option value="voyager" selected>Voyager</option>
+                <option value="topo">Topographic</option>
+                <option value="satellite">Satellite</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="none">No Basemap</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" id="btn-logs" title="Logs">📋</button>
+            <button class="btn btn-ghost" id="btn-info" title="Tool Guide" style="font-size:22px;padding:2px 6px;line-height:1;">ℹ️</button>
+        </div>
+    </header>
+
+    <!-- Auto-save status indicator -->
+    <div class="save-indicator" id="save-indicator"></div>
+
+    <!-- Mobile dropdown menu (hidden on desktop — legacy, kept for compat) -->
+    <div class="mobile-dropdown-menu hidden" id="mobile-dropdown-menu">
+        <button class="mobile-menu-item" data-action="import"><span>📂</span><span>Import Data</span></button>
+        <button class="mobile-menu-item" data-action="photos"><span>📷</span><span>Photo Mapper</span></button>
+        <button class="mobile-menu-item" data-action="arcgis"><span>🌐</span><span>ArcGIS REST</span></button>
+        <button class="mobile-menu-item" data-action="draw"><span>✏️</span><span>Draw</span></button>
+        <div class="mobile-menu-sep"></div>
+        <button class="mobile-menu-item" data-action="logs"><span>📋</span><span>Logs</span></button>
+        <button class="mobile-menu-item" data-action="info"><span>ℹ️</span><span>Tool Guide</span></button>
+    </div>
+
+    <!-- ================================ -->
+    <!-- NEW MOBILE UI (hidden on desktop)-->
+    <!-- ================================ -->
+
+    <!-- Mobile title pill — upper left -->
+    <div class="mobile-title-pill" id="mobile-title-pill">
+        <span class="pill-logo"><img src="icons/TitleIcon.png" alt="GIS-Toolbox.com" width="30" height="30"></span>
+        <span class="pill-text">GIS-Toolbox<span class="title-com">.com</span></span>
+    </div>
+
+    <!-- Mobile FABs — upper right (nav/gear) + lower right (add/plus) -->
+    <button class="mobile-fab" id="mobile-fab-nav" title="Menu" aria-label="Navigation menu"><img src="icons/MobileMenuButton.png" alt="Menu" class="fab-icon"></button>
+    <button class="mobile-fab" id="mobile-fab-add" title="Add" aria-label="Add layer"><img src="icons/MobileAddButton.png" alt="Add" class="fab-icon"></button>
+
+    <!-- Mobile nav flyout menu (gear — upper right) -->
+    <div class="mobile-flyout" id="mobile-flyout-nav">
+        <button class="mobile-flyout-item" data-action="export"><span class="flyout-icon">💾</span><span class="flyout-label">Export</span></button>
+        <button class="mobile-flyout-item" data-action="widgets"><span class="flyout-icon">📊</span><span class="flyout-label">GIS Widgets</span></button>
+        <button class="mobile-flyout-item" data-action="tools"><span class="flyout-icon">🔧</span><span class="flyout-label">GIS Tools</span></button>
+        <div class="mobile-flyout-sep"></div>
+        <button class="mobile-flyout-item" data-action="layers"><span class="flyout-icon">🗺️</span><span class="flyout-label">Layers</span></button>
+        <button class="mobile-flyout-item" data-action="fields"><span class="flyout-icon">📋</span><span class="flyout-label">Fields</span></button>
+        <button class="mobile-flyout-item" data-action="styling"><span class="flyout-icon">🎨</span><span class="flyout-label">Layer Styling</span></button>
+        <button class="mobile-flyout-item" data-action="datatools"><span class="flyout-icon">⚙️</span><span class="flyout-label">Data Tools</span></button>
+        <div class="mobile-flyout-sep"></div>
+        <button class="mobile-flyout-item" data-action="basemap"><span class="flyout-icon">🌍</span><span class="flyout-label">Basemap</span></button>
+        <button class="mobile-flyout-item" data-action="guide"><span class="flyout-icon">ℹ️</span><span class="flyout-label">Tool Guide</span></button>
+    </div>
+
+    <!-- Mobile add flyout menu (plus — lower right) -->
+    <div class="mobile-flyout" id="mobile-flyout-add">
+        <button class="mobile-flyout-item" data-action="import"><span class="flyout-icon">📂</span><span class="flyout-label">Import Layer</span></button>
+        <button class="mobile-flyout-item" data-action="arcgis"><span class="flyout-icon">🌐</span><span class="flyout-label">Add ArcGIS</span></button>
+        <button class="mobile-flyout-item" data-action="photos"><span class="flyout-icon">📷</span><span class="flyout-label">Add Photos Layer</span></button>
+        <button class="mobile-flyout-item" data-action="draw"><span class="flyout-icon">✏️</span><span class="flyout-label">Add Drawing Layer</span></button>
+        <div class="mobile-flyout-sep"></div>
+        <button class="mobile-flyout-item" data-action="fence"><span class="flyout-icon">⛶</span><span class="flyout-label">Import Fence</span></button>
+        <button class="mobile-flyout-item" data-action="location"><span class="flyout-icon">📍</span><span class="flyout-label">Current Location</span></button>
+    </div>
+
+    <!-- ================================ -->
+    <!-- MAIN 3-PANEL LAYOUT (Desktop)    -->
+    <!-- ================================ -->
+    <div class="app-layout">
+
+        <!-- LEFT PANEL -->
+        <aside class="panel panel-left">
+            <div class="panel-header">
+                <span>Layers & Fields</span>
+                <button class="btn-icon" id="toggle-left-panel" title="Collapse">◀</button>
+            </div>
+            <div class="panel-body">
+                <!-- Layer List -->
+                <div class="panel-section">
+                    <div class="panel-section-header" onclick="toggleSection(this)">
+                        Layers <span class="arrow">▼</span>
+                    </div>
+                    <div class="panel-section-body" id="layer-list">
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;margin:0 auto 12px;opacity:0.5;">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                            <p>No layers loaded.<br>Import a file to get started.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Field List -->
+                <div class="panel-section">
+                    <div class="panel-section-header" onclick="toggleSection(this)">
+                        Fields <span class="arrow">▼</span>
+                    </div>
+                    <div class="panel-section-body" id="field-list">
+                        <div class="text-muted text-sm p-8">Select a layer to view fields</div>
+                    </div>
+                </div>
+
+                <!-- Layer Data Tools -->
+                <div id="dataprep-tools"></div>
+            </div>
+        </aside>
+
+        <!-- CENTER PANEL — MAP -->
+        <main class="panel-center">
+            <div id="map-container">
+                <div class="map-overlay" id="map-drop-overlay">
+                    <div>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;">
+                            <path d="M12 16v-4m0-4h.01M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7l3-7z"/>
+                        </svg>
+                        <p style="margin-top:12px; font-size:18px; font-weight:600;">Drop files here to import</p>
+                        <p class="text-sm text-muted">GeoJSON, CSV, Excel, KML, KMZ, Shapefile (ZIP)</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT PANEL -->
+        <aside class="panel panel-right">
+            <div class="panel-header">
+                <button class="btn-icon" id="toggle-right-panel" title="Collapse">▶</button>
+                <span>Output & Export</span>
+            </div>
+            <div class="panel-body" id="output-panel-content">
+                <div class="empty-state">
+                    <p>No layer selected</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Expand tabs for collapsed panels (outside app-layout so they aren't clipped) -->
+    <button class="panel-expand-tab panel-expand-left hidden" id="expand-left-panel" title="Expand Layers">▶</button>
+    <button class="panel-expand-tab panel-expand-right hidden" id="expand-right-panel" title="Expand Export">◀</button>
+
+    <!-- ================================ -->
+    <!-- LOGS PANEL (slides up)           -->
+    <!-- ================================ -->
+    <div id="logs-panel" class="logs-panel hidden">
+        <div class="logs-header">
+            <h3>Logs</h3>
+            <div class="logs-toolbar">
+                <input type="search" id="logs-search" placeholder="Search logs..." class="input-sm">
+                <select id="logs-level" class="input-sm">
+                    <option value="">All Levels</option>
+                    <option value="ERROR">Errors</option>
+                    <option value="WARN">Warnings</option>
+                    <option value="INFO">Info</option>
+                    <option value="DEBUG">Debug</option>
+                </select>
+                <button class="btn btn-ghost btn-sm" id="logs-copy" title="Copy logs">📋</button>
+                <button class="btn btn-ghost btn-sm" id="logs-download" title="Download logs">💾</button>
+                <button class="btn btn-ghost btn-sm" id="logs-clear" title="Clear">🗑️</button>
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('logs-panel').classList.add('hidden')">✕</button>
+            </div>
+        </div>
+        <div class="logs-body" id="logs-body"></div>
+    </div>
+
+    <!-- ================================ -->
+    <!-- MOBILE BOTTOM NAV                -->
+    <!-- ================================ -->
+    <nav class="mobile-nav">
+        <div class="mobile-nav-item active" data-tab="map">
+            <span>🗺️</span>
+            <span>Map</span>
+        </div>
+        <div class="mobile-nav-item" data-tab="data">
+            <span>📊</span>
+            <span>Layers</span>
+        </div>
+        <div class="mobile-nav-item" data-tab="prep">
+            <span>🔧</span>
+            <span>Data</span>
+        </div>
+        <div class="mobile-nav-item" data-tab="tools">
+            <span>⚙️</span>
+            <span>GIS Tools</span>
+        </div>
+        <div class="mobile-nav-item" data-tab="export">
+            <span>💾</span>
+            <span>Export</span>
+        </div>
+    </nav>
+
+    <!-- Mobile content panels (hidden on desktop) -->
+    <div class="mobile-content hidden" id="mobile-data"></div>
+    <div class="mobile-content hidden" id="mobile-prep"></div>
+    <div class="mobile-content hidden" id="mobile-tools"></div>
+    <div class="mobile-content hidden" id="mobile-export"></div>
+
+    <!-- ================================ -->
+    <!-- LIBRARY SCRIPTS (CDN, NO API KEYS) -->
+    <!-- ================================ -->
+    <!-- Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin="anonymous"></script>
+
+    <!-- PapaParse (CSV) -->
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+
+    <!-- SheetJS / XLSX (Excel) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+    <!-- JSZip (KMZ, Shapefile ZIP) -->
+    <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+
+    <!-- toGeoJSON (KML) -->
+    <script src="https://unpkg.com/@mapbox/togeojson@0.16.2/togeojson.js"></script>
+
+    <!-- Turf.js (GIS analysis) -->
+    <script src="https://unpkg.com/@turf/turf@7.1.0/turf.min.js"></script>
+
+    <!-- shpjs (Shapefile) -->
+    <script src="https://unpkg.com/shpjs@4.0.4/dist/shp.js"></script>
+
+    <!-- exifr (Photo EXIF) -->
+    <script src="https://unpkg.com/exifr@7.1.3/dist/full.umd.js"></script>
+
+    <!-- App Entry Point -->
+    <script type="module" src="js/app.js"></script>
+
+    <!-- Register Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').then(reg => {
+                reg.onupdatefound = () => {
+                    const worker = reg.installing;
+                    worker.onstatechange = () => {
+                        if (worker.state === 'activated') {
+                            window.location.reload();
+                        }
+                    };
+                };
+            });
+        }
+    </script>
+</body>
+</html>
