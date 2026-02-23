@@ -6,10 +6,8 @@
     <title>GIS-Toolbox.com</title>
 
 
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossorigin="anonymous">
+    <!-- Mapbox GL JS CSS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
 
     <!-- App CSS -->
     <link rel="stylesheet" href="css/main.css">
@@ -52,15 +50,16 @@
             <!-- Mobile overflow menu button (hidden on desktop) -->
             <button class="btn btn-ghost btn-sm mobile-menu-btn" id="btn-mobile-menu" title="Menu">☰</button>
             <select id="basemap-select" class="btn-sm" title="Basemap">
-                <option value="osm">Street Map</option>
+                <option value="streets">Street Map</option>
                 <option value="light">Light / Gray</option>
                 <option value="dark">Dark</option>
-                <option value="voyager" selected>Voyager</option>
-                <option value="topo">Topographic</option>
+                <option value="outdoors">Outdoors</option>
                 <option value="satellite">Satellite</option>
-                <option value="hybrid">Hybrid</option>
+                <option value="hybrid" selected>Hybrid</option>
+                <option value="standard">Standard</option>
                 <option value="none">No Basemap</option>
             </select>
+            <button class="btn btn-ghost btn-sm" id="btn-3d" title="Toggle 3D">🏔️</button>
             <button class="btn btn-ghost btn-sm" id="btn-logs" title="Logs">📋</button>
             <button class="btn btn-ghost" id="btn-info" title="Tool Guide" style="font-size:22px;padding:2px 6px;line-height:1;">ℹ️</button>
         </div>
@@ -256,10 +255,8 @@
     <!-- ================================ -->
     <!-- LIBRARY SCRIPTS (CDN, NO API KEYS) -->
     <!-- ================================ -->
-    <!-- Leaflet -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-            crossorigin="anonymous"></script>
+    <!-- Mapbox GL JS -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
 
     <!-- PapaParse (CSV) -->
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>

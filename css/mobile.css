@@ -594,14 +594,13 @@
         font-size: 11px;
     }
 
-    /* ————— LEAFLET POPUP ————— */
-    #map-container .leaflet-popup-content {
+    /* ————— MAPBOX POPUP ————— */
+    #map-container .mapboxgl-popup-content {
         max-width: 260px;
         font-size: 12px;
-        margin: 10px 12px;
     }
-    #map-container .leaflet-popup-content td,
-    #map-container .leaflet-popup-content th {
+    #map-container .mapboxgl-popup-content td,
+    #map-container .mapboxgl-popup-content th {
         padding: 2px 6px;
         font-size: 11px;
     }
@@ -629,10 +628,10 @@
     .mt-8 { margin-top: 6px; }
 
     /* ————— MAP CONTROLS: hide zoom buttons on mobile ————— */
-    .leaflet-control-zoom {
+    .mapboxgl-ctrl-group {
         display: none !important;
     }
-    .leaflet-control-attribution {
+    .mapboxgl-ctrl-attrib {
         font-size: 8px !important;
         padding: 1px 4px !important;
     }

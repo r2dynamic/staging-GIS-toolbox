@@ -2,7 +2,7 @@
 // GIS Toolbox — Service Worker
 // Bump CACHE_VERSION to push updates
 // ============================================
-const CACHE_VERSION = '1.19.18';
+const CACHE_VERSION = '2.0.0';
 const CACHE_NAME = `gis-toolbox-v${CACHE_VERSION}`;
 
 const APP_FILES = [
@@ -88,8 +88,8 @@ const APP_FILES = [
 
 // CDN libraries — versioned, rarely change
 const CDN_FILES = [
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+    'https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css',
+    'https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js',
     'https://unpkg.com/papaparse@5.4.1/papaparse.min.js',
     'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js',
     'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js',

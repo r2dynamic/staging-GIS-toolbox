@@ -40,7 +40,7 @@ function boot() {
     setupDragDrop();
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    // Ensure Leaflet recalculates size after layout settles
+    // Ensure map recalculates size after layout settles
     setTimeout(() => { mapManager.map?.invalidateSize(); }, 100);
 
     // Popup navigation for multi-feature cycling
@@ -505,6 +505,14 @@ function setupEventListeners() {
     // Basemap selector
     document.getElementById('basemap-select')?.addEventListener('change', (e) => {
         mapManager.setBasemap(e.target.value);
+    });
+
+    // 3D toggle
+    document.getElementById('btn-3d')?.addEventListener('click', () => {
+        const is3D = mapManager._is3D;
+        mapManager.toggle3D(!is3D);
+        const btn = document.getElementById('btn-3d');
+        if (btn) btn.classList.toggle('active', !is3D);
     });
 
     // AGOL compat toggle
@@ -1288,10 +1296,7 @@ function mobileShowLayersModal() {
                         refreshModal();
                         break;
                     case 'zoom': {
-                        const mapLayer = mapManager.dataLayers.get(id);
-                        if (mapLayer) {
-                            try { mapManager.getMap().fitBounds(mapLayer.getBounds(), { padding: [30, 30] }); } catch(_) {}
-                        }
+                        mapManager.zoomToLayer(id);
                         close(null);
                         break;
                     }
@@ -4886,8 +4891,7 @@ function showMapContextMenu({ latlng, originalEvent, layerId, featureIndex, feat
 
         // Zoom to
         items.push({ icon: '🔍', label: 'Zoom to layer', action: () => {
-            const ll = mapManager.dataLayers.get(layerId);
-            if (ll) { try { mapManager.getMap().fitBounds(ll.getBounds(), { padding: [30, 30] }); } catch(_) {} }
+            mapManager.zoomToLayer(layerId);
         }});
 
         // Set active
@@ -4950,10 +4954,7 @@ window.app = {
     setActiveLayer: (id) => { setActiveLayer(id); refreshUI(); },
     toggleVisibility: (id) => { toggleLayerVisibility(id); mapManager.toggleLayer(id, getLayers().find(l => l.id === id)?.visible); renderLayerList(); },
     zoomToLayer: (id) => {
-        const layer = mapManager.dataLayers.get(id);
-        if (layer) {
-            try { mapManager.getMap().fitBounds(layer.getBounds(), { padding: [30, 30] }); } catch(_) {}
-        }
+        mapManager.zoomToLayer(id);
     },
     removeLayer: async (id) => {
         const ok = await confirm('Remove Layer', 'Remove this layer?');
