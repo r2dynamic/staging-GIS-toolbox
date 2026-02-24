@@ -29,7 +29,6 @@ import sessionStore from './core/session-store.js';
 import { SpatialAnalyzerWidget } from './widgets/spatial-analyzer.js';
 import { BulkUpdateWidget } from './widgets/bulk-update.js';
 import { ProximityJoinWidget } from './widgets/proximity-join.js';
-import { WirelessWidget } from './widgets/wireless/wireless-widget.js';
 
 // ============================
 // Initialize app
@@ -988,7 +987,6 @@ function renderDataPrepTools() {
                     <span class="geo-tool-btn"><button class="btn btn-sm btn-secondary" onclick="window.app.openSpatialAnalyzer()">🔎 Find Features in Area</button><span class="geo-tip">Search for features from one layer that fall inside a drawn area or polygon layer.</span></span>
                     <span class="geo-tool-btn"><button class="btn btn-sm btn-secondary" onclick="window.app.openBulkUpdate()">✏️ Bulk Update</button><span class="geo-tip">Select multiple features and update their attribute fields in bulk.</span></span>
                     <span class="geo-tool-btn"><button class="btn btn-sm btn-secondary" onclick="window.app.openProximityJoin()">↔️ Proximity Join</button><span class="geo-tip">Copy attributes from the nearest feature in a target layer to each source feature.</span></span>
-                    <span class="geo-tool-btn"><button class="btn btn-sm btn-secondary" onclick="window.app.openWirelessCoverage()">📡 Wireless Coverage</button><span class="geo-tip">Visualize radio coverage sectors/omni, import antenna data, and run coverage analysis.</span></span>
                 </div>
             </div>
         </div>
@@ -1171,7 +1169,6 @@ function mobileShowWidgetsModal() {
         { label: '📊 Spatial Analyzer', action: 'openSpatialAnalyzer' },
         { label: '✏️ Bulk Update', action: 'openBulkUpdate' },
         { label: '📍 Proximity Join', action: 'openProximityJoin' },
-        { label: '📡 Wireless Coverage', action: 'openWirelessCoverage' },
     ];
     const html = `<div style="display:flex;flex-direction:column;gap:8px;">
         ${items.map(i => `<button class="btn btn-secondary" style="min-height:48px;justify-content:flex-start;gap:12px;" data-action="${i.action}">${i.label}</button>`).join('')}
@@ -3688,22 +3685,6 @@ function openProximityJoin() {
     _proximityJoinWidget.toggle();
 }
 
-let _wirelessWidget = null;
-
-function openWirelessCoverage() {
-    if (!_wirelessWidget) {
-        _wirelessWidget = new WirelessWidget();
-    }
-    _wirelessWidget.getLayers = getLayers;
-    _wirelessWidget.getLayerById = (id) => getLayers().find(l => l.id === id);
-    _wirelessWidget.mapManager = mapManager;
-    _wirelessWidget.addLayer = addLayer;
-    _wirelessWidget.createSpatialDataset = createSpatialDataset;
-    _wirelessWidget.refreshUI = refreshUI;
-    _wirelessWidget.showToast = showToast;
-    _wirelessWidget.toggle();
-}
-
 // ============================
 // Import Fence
 // ============================
@@ -5100,7 +5081,6 @@ window.app = {
     openSpatialAnalyzer,
     openBulkUpdate,
     openProximityJoin,
-    openWirelessCoverage,
     mergeLayers: handleMergeLayers,
     showToolInfo,
     // Selection
