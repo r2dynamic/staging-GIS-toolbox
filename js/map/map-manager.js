@@ -5,7 +5,7 @@
 import logger from '../core/logger.js';
 import bus from '../core/event-bus.js';
 
-const MAPBOX_TOKEN = 'pk.eyJ1Ijoicm9tZGl6bGUiLCJhIjoiY21empnc2k0MDdnZjNob205cGVsNjM3YyJ9.Pc8Q9tGnCiPiAMWblBM9AQ';
+const MAPBOX_TOKEN = 'pk.eyJ1Ijoicm9tZGl6bGUiLCJhIjoiY21senAyb2lqMDA3bTNrcHNyY2xydGNvZiJ9.vv2JayFyykKXg6pylj756Q';
 
 /* ─── Basemap style URLs ─── */
 const BASEMAPS = {
