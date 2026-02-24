@@ -502,18 +502,46 @@ function setupEventListeners() {
     // Right-click context menu
     bus.on('map:contextmenu', showMapContextMenu);
 
-    // Basemap selector
-    document.getElementById('basemap-select')?.addEventListener('change', (e) => {
-        mapManager.setBasemap(e.target.value);
-    });
+    // Basemap custom dropdown
+    const bmDropBtn  = document.getElementById('basemap-dropdown-btn');
+    const bmDropMenu = document.getElementById('basemap-dropdown-menu');
 
-    // 3D toggle
-    document.getElementById('btn-3d')?.addEventListener('click', () => {
-        const is3D = mapManager._is3D;
-        mapManager.toggle3D(!is3D);
-        const btn = document.getElementById('btn-3d');
-        if (btn) btn.classList.toggle('active', !is3D);
-    });
+    if (bmDropBtn && bmDropMenu) {
+        // Toggle dropdown open/close
+        bmDropBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            bmDropMenu.classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => bmDropMenu.classList.add('hidden'));
+        bmDropMenu.addEventListener('click', (e) => e.stopPropagation());
+
+        // Basemap option buttons
+        bmDropMenu.querySelectorAll('.basemap-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.dataset.basemap;
+                mapManager.setBasemap(key);
+                // Update active state
+                bmDropMenu.querySelectorAll('.basemap-option').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // Update button label
+                bmDropBtn.textContent = `🗺️ ${btn.textContent} ▾`;
+            });
+        });
+
+        // 3D toggle checkbox
+        const check3D = document.getElementById('basemap-3d-check');
+        if (check3D) {
+            check3D.addEventListener('change', () => {
+                mapManager.toggle3D(check3D.checked);
+            });
+            // Keep checkbox in sync if 3D is toggled elsewhere
+            bus.on('map:3dToggled', (is3D) => {
+                check3D.checked = is3D;
+            });
+        }
+    }
 
     // AGOL compat toggle
     document.getElementById('agol-toggle')?.addEventListener('change', () => {
@@ -1430,16 +1458,11 @@ function mobileShowDataToolsModal() {
 
 function mobileShowBasemapModal() {
     const basemapOptions = [
-        { value: 'osm', label: 'Street Map' },
-        { value: 'light', label: 'Light / Gray' },
-        { value: 'dark', label: 'Dark' },
-        { value: 'voyager', label: 'Voyager' },
-        { value: 'topo', label: 'Topographic' },
-        { value: 'satellite', label: 'Satellite' },
-        { value: 'hybrid', label: 'Hybrid' },
-        { value: 'none', label: 'No Basemap' }
+        { value: 'standard', label: 'Mapbox Default' },
+        { value: 'imagery',  label: 'Mapbox Imagery' }
     ];
-    const currentBasemap = document.getElementById('basemap-select')?.value || 'voyager';
+    const currentBasemap = mapManager.currentBasemap || 'standard';
+    const is3D = mapManager._is3D;
     const html = `
         <div style="display:flex;flex-direction:column;gap:6px;">
             ${basemapOptions.map(o => `
@@ -1449,6 +1472,12 @@ function mobileShowBasemapModal() {
                     🌍 ${o.label}
                 </button>
             `).join('')}
+            <div style="height:1px;background:var(--border);margin:6px 0;"></div>
+            <label style="display:flex;align-items:center;justify-content:space-between;padding:12px;font-size:14px;color:var(--text);cursor:pointer;">
+                <span>3D Terrain</span>
+                <input type="checkbox" id="mobile-3d-check" ${is3D ? 'checked' : ''}
+                    style="width:40px;height:22px;accent-color:var(--primary);cursor:pointer;">
+            </label>
         </div>`;
     showModal('Basemap', html, {
         onMount: (overlay, close) => {
@@ -1456,12 +1485,28 @@ function mobileShowBasemapModal() {
                 btn.addEventListener('click', () => {
                     const val = btn.dataset.basemap;
                     mapManager.setBasemap(val);
-                    const desktopSelect = document.getElementById('basemap-select');
-                    if (desktopSelect) desktopSelect.value = val;
+                    // Sync desktop dropdown
+                    const bmDropMenu = document.getElementById('basemap-dropdown-menu');
+                    const bmDropBtn  = document.getElementById('basemap-dropdown-btn');
+                    if (bmDropMenu) {
+                        bmDropMenu.querySelectorAll('.basemap-option').forEach(b => b.classList.remove('active'));
+                        const match = bmDropMenu.querySelector(`[data-basemap="${val}"]`);
+                        if (match) match.classList.add('active');
+                    }
+                    if (bmDropBtn) {
+                        const lbl = basemapOptions.find(o => o.value === val)?.label || val;
+                        bmDropBtn.textContent = `🗺️ ${lbl} ▾`;
+                    }
                     close(null);
                     showToast(`Basemap: ${btn.textContent.trim()}`, 'success', { duration: 1500 });
                 });
             });
+            const mob3d = overlay.querySelector('#mobile-3d-check');
+            if (mob3d) {
+                mob3d.addEventListener('change', () => {
+                    mapManager.toggle3D(mob3d.checked);
+                });
+            }
         }
     });
 }
@@ -1792,16 +1837,11 @@ function renderMobileToolsPanel() {
     const el = document.getElementById('mobile-tools');
     if (!el) return;
     const basemapOptions = [
-        { value: 'osm', label: 'Street Map' },
-        { value: 'light', label: 'Light / Gray' },
-        { value: 'dark', label: 'Dark' },
-        { value: 'voyager', label: 'Voyager' },
-        { value: 'topo', label: 'Topographic' },
-        { value: 'satellite', label: 'Satellite' },
-        { value: 'hybrid', label: 'Hybrid' },
-        { value: 'none', label: 'No Basemap' }
+        { value: 'standard', label: 'Mapbox Default' },
+        { value: 'imagery',  label: 'Mapbox Imagery' }
     ];
-    const currentBasemap = document.getElementById('basemap-select')?.value || 'osm';
+    const currentBasemap = mapManager.currentBasemap || 'standard';
+    const is3D = mapManager._is3D;
     const layers = getLayers();
     el.innerHTML = `
         <h3>GIS Tools</h3>
@@ -1830,11 +1870,29 @@ function renderMobileToolsPanel() {
         <h3 style="margin-top:10px;">Basemap</h3>
         <select id="basemap-select-mobile" style="width:100%;">
             ${basemapOptions.map(o => `<option value="${o.value}" ${o.value === currentBasemap ? 'selected' : ''}>${o.label}</option>`).join('')}
-        </select>`;
+        </select>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;margin-top:6px;font-size:13px;color:var(--text);cursor:pointer;">
+            <span>3D Terrain</span>
+            <input type="checkbox" id="mobile-tools-3d-check" ${is3D ? 'checked' : ''}
+                style="width:36px;height:20px;accent-color:var(--primary);cursor:pointer;">
+        </label>`;
     el.querySelector('#basemap-select-mobile')?.addEventListener('change', (e) => {
         mapManager.setBasemap(e.target.value);
-        const desktopSelect = document.getElementById('basemap-select');
-        if (desktopSelect) desktopSelect.value = e.target.value;
+        // Sync desktop dropdown
+        const bmDropMenu = document.getElementById('basemap-dropdown-menu');
+        const bmDropBtn  = document.getElementById('basemap-dropdown-btn');
+        if (bmDropMenu) {
+            bmDropMenu.querySelectorAll('.basemap-option').forEach(b => b.classList.remove('active'));
+            const match = bmDropMenu.querySelector(`[data-basemap="${e.target.value}"]`);
+            if (match) match.classList.add('active');
+        }
+        if (bmDropBtn) {
+            const lbl = basemapOptions.find(o => o.value === e.target.value)?.label || e.target.value;
+            bmDropBtn.textContent = `🗺️ ${lbl} ▾`;
+        }
+    });
+    el.querySelector('#mobile-tools-3d-check')?.addEventListener('change', (e) => {
+        mapManager.toggle3D(e.target.checked);
     });
 }
 
@@ -4849,6 +4907,20 @@ function showMapContextMenu({ latlng, originalEvent, layerId, featureIndex, feat
         const text = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
         navigator.clipboard.writeText(text).then(() => showToast(`Copied: ${text}`, 'success'))
             .catch(() => showToast(text, 'info'));
+    }});
+
+    // Google Street View
+    items.push({ icon: '🛣️', label: 'Open in Google Street View', action: () => {
+        const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${latlng.lat.toFixed(6)},${latlng.lng.toFixed(6)}`;
+        window.open(url, '_blank');
+    }});
+
+    // Google Earth 3D
+    items.push({ icon: '🌎', label: 'Open in Google Earth 3D', action: () => {
+        const lat = latlng.lat.toFixed(6);
+        const lng = latlng.lng.toFixed(6);
+        const url = `https://earth.google.com/web/@${lat},${lng},3000a,0d,50y,0h,45t,0r/data=OgMKATA`;
+        window.open(url, '_blank');
     }});
 
     if (layer) {

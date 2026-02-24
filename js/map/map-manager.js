@@ -9,14 +9,8 @@ const MAPBOX_TOKEN = 'pk.eyJ1Ijoicm9tZGl6bGUiLCJhIjoiY21senAyb2lqMDA3bTNrcHNyY2x
 
 /* ─── Basemap style URLs ─── */
 const BASEMAPS = {
-    streets:   { name: 'Streets',       style: 'mapbox://styles/mapbox/streets-v12' },
-    light:     { name: 'Light / Gray',  style: 'mapbox://styles/mapbox/light-v11' },
-    dark:      { name: 'Dark',          style: 'mapbox://styles/mapbox/dark-v11' },
-    outdoors:  { name: 'Outdoors',      style: 'mapbox://styles/mapbox/outdoors-v12' },
-    satellite: { name: 'Satellite',     style: 'mapbox://styles/mapbox/satellite-v9' },
-    hybrid:    { name: 'Hybrid',        style: 'mapbox://styles/mapbox/satellite-streets-v12' },
-    standard:  { name: 'Standard',      style: 'mapbox://styles/mapbox/standard' },
-    none:      { name: 'No Basemap',    style: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#121212' } }] } }
+    standard:  { name: 'Mapbox Default', style: 'mapbox://styles/mapbox/standard' },
+    imagery:   { name: 'Mapbox Imagery', style: 'mapbox://styles/mapbox/satellite-streets-v12' }
 };
 
 const LAYER_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed', '#0891b2', '#be185d', '#65a30d'];
@@ -79,7 +73,7 @@ class MapManager {
         this._layerNames = new Map();      // layerId -> display name
         this._layerStyles = new Map();     // layerId -> style object
         this._layerData = new Map();       // layerId -> { geojson, colorIndex }
-        this.currentBasemap = 'streets';
+        this.currentBasemap = 'standard';
 
         // Import fence state
         this._importFence = null;
@@ -99,6 +93,9 @@ class MapManager {
 
         // 3D state
         this._is3D = false;
+
+        // Right-click drag tracking (suppress context menu after 3D rotate/pitch)
+        this._rightDragged = false;
 
         // Interaction cleanup
         this._interactionCleanup = null;
@@ -181,7 +178,7 @@ class MapManager {
 
         this.map = new mapboxgl.Map({
             container: containerId,
-            style: BASEMAPS.hybrid.style,
+            style: BASEMAPS.standard.style,
             center: [-111.09, 39.32],
             zoom: 7,
             attributionControl: true,
@@ -202,8 +199,18 @@ class MapManager {
             if (!this._selectionMode) this.clearHighlight();
         });
 
+        // Track right-button drag to suppress context menu after 3D rotate/pitch
+        const canvas = this.map.getCanvas();
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 2) this._rightDragged = false;
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            if (e.buttons & 2) this._rightDragged = true;
+        });
+
         this.map.on('contextmenu', (e) => {
             if (e._handled) return;
+            if (this._rightDragged) { this._rightDragged = false; return; }
             bus.emit('map:contextmenu', {
                 latlng: { lat: e.lngLat.lat, lng: e.lngLat.lng },
                 originalEvent: e.originalEvent,
@@ -212,6 +219,8 @@ class MapManager {
         });
 
         this.map.on('load', () => {
+            this._hideLabelsAndLandmarks();
+            this._logAllLayers();  // temporary diagnostic — remove after debugging exit labels
             logger.info('Map', 'Map initialised (Mapbox GL JS)');
             bus.emit('map:ready', this.map);
             this._initCoordSearch();
@@ -297,6 +306,7 @@ class MapManager {
         this.currentBasemap = key;
 
         this.map.once('style.load', () => {
+            this._hideLabelsAndLandmarks();
             this._reAddAllLayers();
             if (was3D) { this._is3D = false; this.toggle3D(true); }
             bus.emit('map:basemap', key);
@@ -304,6 +314,119 @@ class MapManager {
     }
 
     getBasemaps() { return BASEMAPS; }
+
+    /**
+     * Hide place labels, POI labels, and landmark icons on the current style.
+     * Works with both Mapbox Standard (config-based) and classic styles (layer-based).
+     */
+    _hideLabelsAndLandmarks() {
+        if (!this.map) return;
+        try {
+            // Mapbox Standard style: use setConfigProperty to hide labels/landmarks
+            const importIds = ['basemap', 'standard'];
+            for (const importId of importIds) {
+                try {
+                    this.map.setConfigProperty(importId, 'showPlaceLabels', false);
+                    this.map.setConfigProperty(importId, 'showPointOfInterestLabels', false);
+                    this.map.setConfigProperty(importId, 'showTransitLabels', false);
+                } catch (_) { /* not a Standard style or import not found */ }
+            }
+
+            // Collect all layers — including imported/internal Standard style layers
+            let layers = this.map.getStyle()?.layers || [];
+
+            // For Standard style: try to access internal fragment layers
+            try {
+                const styleLayers = this.map.style?._mergedLayers || this.map.style?.stylesheet?.layers;
+                if (styleLayers && styleLayers.length > layers.length) layers = styleLayers;
+            } catch (_) {}
+
+            // Also gather layer IDs from order array if available
+            try {
+                const order = this.map.style?._order || this.map.style?.order;
+                if (order?.length) {
+                    for (const lid of order) {
+                        if (!layers.find(l => l.id === lid)) {
+                            layers.push({ id: lid });
+                        }
+                    }
+                }
+            } catch (_) {}
+
+            for (const layer of layers) {
+                const id = layer.id || '';
+                const src = layer['source-layer'] || '';
+
+                // Match POI labels/icons
+                if (id.includes('poi') || src === 'poi_label') {
+                    try { this.map.setLayoutProperty(id, 'visibility', 'none'); } catch (_) {}
+                    continue;
+                }
+                // Match place / locality / city / town labels
+                if (id.includes('place') || id.includes('settlement') || src === 'place_label') {
+                    try { this.map.setLayoutProperty(id, 'visibility', 'none'); } catch (_) {}
+                    continue;
+                }
+                // Match landmark icons / labels
+                if (id.includes('landmark') || id.includes('airport-label') || id.includes('natural-point')) {
+                    try { this.map.setLayoutProperty(id, 'visibility', 'none'); } catch (_) {}
+                    continue;
+                }
+                // Match freeway exit numbers / junction refs / exit shields
+                if (id.includes('exit') || id.includes('junction') || id.includes('motorway-junction')
+                    || src === 'motorway_junction') {
+                    try { this.map.setLayoutProperty(id, 'visibility', 'none'); } catch (_) {}
+                    continue;
+                }
+            }
+
+            // Brute-force: try known Standard style layer IDs for exit shields
+            const knownExitLayers = [
+                'road-exit-shield', 'road-exit-ref', 'motorway-junction',
+                'road-number-shield', 'road-exit', 'junction-ref',
+                'exit-shield', 'motorway-exit', 'road-ref-shield'
+            ];
+            for (const lid of knownExitLayers) {
+                try {
+                    if (this.map.getLayer(lid)) {
+                        this.map.setLayoutProperty(lid, 'visibility', 'none');
+                    }
+                } catch (_) {}
+            }
+
+            logger.info('Map', 'Place labels, POI labels, landmarks, and exit numbers hidden');
+        } catch (e) {
+            logger.warn('Map', 'Could not hide labels/landmarks', { error: e.message });
+        }
+    }
+
+    /** Temporary diagnostic: log all map layers to console so we can identify exit number layers */
+    _logAllLayers() {
+        try {
+            const layers = this.map.getStyle()?.layers || [];
+            const symbolLayers = layers.filter(l => l.type === 'symbol' || !l.type);
+            console.group('🗺️ Map layers (symbol/label type) — total:', layers.length, 'symbols:', symbolLayers.length);
+            for (const l of symbolLayers) {
+                console.log(`  id: "${l.id}"  type: ${l.type}  source-layer: "${l['source-layer'] || ''}"  layout:`, l.layout);
+            }
+            console.groupEnd();
+
+            // Also check for any layer with exit/junction/shield in name across ALL layers
+            const exitRelated = layers.filter(l => {
+                const id = (l.id || '').toLowerCase();
+                return id.includes('exit') || id.includes('junction') || id.includes('shield') || id.includes('ref');
+            });
+            if (exitRelated.length) {
+                console.group('🔍 Exit/junction/shield/ref related layers:');
+                exitRelated.forEach(l => console.log(`  "${l.id}" type:${l.type} source-layer:"${l['source-layer'] || ''}"`));
+                console.groupEnd();
+            } else {
+                console.log('🔍 No exit/junction/shield/ref layers found in getStyle().layers — they may be inside a Standard style import.');
+            }
+        } catch (e) {
+            console.warn('Layer diagnostic failed:', e);
+        }
+    }
 
     _reAddAllLayers() {
         for (const [layerId, { geojson, colorIndex }] of this._layerData) {
@@ -444,6 +567,7 @@ class MapManager {
                 });
                 el.addEventListener('contextmenu', (e) => {
                     e.preventDefault(); e.stopPropagation();
+                    if (this._rightDragged) { this._rightDragged = false; return; }
                     bus.emit('map:contextmenu', {
                         latlng: { lat: coord[1], lng: coord[0] },
                         originalEvent: e, layerId,
@@ -491,13 +615,14 @@ class MapManager {
                 else { this._popupHits = nearby; this._popupIndex = 0; this._popupLatLng = ll; this._renderCyclePopup(); }
             }
         });
-        this.map.on('mouseenter', mapLayerId, () => { if (!this._selectionMode) this.map.getCanvas().style.cursor = 'pointer'; });
-        this.map.on('mouseleave', mapLayerId, () => { if (!this._selectionMode) this.map.getCanvas().style.cursor = ''; });
+        this.map.on('mouseenter', mapLayerId, () => { if (!this._selectionMode && !this._isDrawing()) this.map.getCanvas().style.cursor = 'pointer'; });
+        this.map.on('mouseleave', mapLayerId, () => { if (!this._selectionMode && !this._isDrawing()) this.map.getCanvas().style.cursor = ''; });
     }
 
     _addFeatureContextMenuHandler(mapLayerId, datasetId) {
         this.map.on('contextmenu', mapLayerId, (e) => {
             e._handled = true;
+            if (this._rightDragged) { this._rightDragged = false; return; }
             if (!e.features?.length) return;
             const f = e.features[0];
             const origFeature = this._getOriginalFeature(datasetId, f.properties._featureIndex);
@@ -781,7 +906,7 @@ class MapManager {
             let start = null;
             const rSrc = '_rect-draw-src', rFill = '_rect-draw-fill', rLine = '_rect-draw-line';
 
-            const onDown = (e) => { start = e.lngLat; this.map.dragPan.disable(); };
+            const onDown = (e) => { if (e.originalEvent.button !== 0) return; start = e.lngLat; this.map.dragPan.disable(); };
             const onMove = (e) => {
                 if (!start) return;
                 const bb = this._lngLatsToBbox(start, e.lngLat);
@@ -861,7 +986,7 @@ class MapManager {
                 resolve([bb[0], bb[1], bb[2], bb[3]]);
             };
 
-            const onDown = e => beginDraw(e.lngLat);
+            const onDown = e => { if (e.originalEvent.button !== 0) return; beginDraw(e.lngLat); };
             const onMove = e => updateDraw(e.lngLat);
             const onUp   = e => endDraw(e.lngLat);
 
@@ -933,6 +1058,11 @@ class MapManager {
 
     _cancelInteraction() { if (this._interactionCleanup) { this._interactionCleanup(); this._interactionCleanup = null; } }
 
+    /** Check if a draw tool is currently active (via DrawManager) */
+    _isDrawing() {
+        try { return !!this.map?.getCanvas()?.style.cursor?.includes('crosshair'); } catch { return false; }
+    }
+
     _showInteractionBanner(text, onCancel) {
         const b = document.createElement('div');
         b.className = 'map-interaction-banner';
@@ -985,7 +1115,7 @@ class MapManager {
         let start = null, dragging = false;
         const rSrc = '_sel-rect-src', rLay = '_sel-rect-lay';
 
-        const onDown = e => { if (!e.originalEvent.shiftKey && !e.originalEvent.ctrlKey) return; start = e.lngLat; dragging = true; this.map.dragPan.disable(); };
+        const onDown = e => { if (e.originalEvent.button !== 0) return; if (!e.originalEvent.shiftKey && !e.originalEvent.ctrlKey) return; start = e.lngLat; dragging = true; this.map.dragPan.disable(); };
         const onMove = e => {
             if (!dragging) return;
             const bb = this._lngLatsToBbox(start, e.lngLat);

@@ -49,17 +49,18 @@
         <div class="header-right">
             <!-- Mobile overflow menu button (hidden on desktop) -->
             <button class="btn btn-ghost btn-sm mobile-menu-btn" id="btn-mobile-menu" title="Menu">☰</button>
-            <select id="basemap-select" class="btn-sm" title="Basemap">
-                <option value="streets">Street Map</option>
-                <option value="light">Light / Gray</option>
-                <option value="dark">Dark</option>
-                <option value="outdoors">Outdoors</option>
-                <option value="satellite">Satellite</option>
-                <option value="hybrid" selected>Hybrid</option>
-                <option value="standard">Standard</option>
-                <option value="none">No Basemap</option>
-            </select>
-            <button class="btn btn-ghost btn-sm" id="btn-3d" title="Toggle 3D">🏔️</button>
+            <div class="basemap-dropdown" id="basemap-dropdown">
+                <button class="btn btn-secondary btn-sm basemap-dropdown-btn" id="basemap-dropdown-btn" title="Basemap">🗺️ Mapbox Default ▾</button>
+                <div class="basemap-dropdown-menu hidden" id="basemap-dropdown-menu">
+                    <button class="basemap-option active" data-basemap="standard">Mapbox Default</button>
+                    <button class="basemap-option" data-basemap="imagery">Mapbox Imagery</button>
+                    <div class="basemap-sep"></div>
+                    <label class="basemap-3d-toggle">
+                        <span>3D Terrain</span>
+                        <input type="checkbox" id="basemap-3d-check">
+                    </label>
+                </div>
+            </div>
             <button class="btn btn-ghost btn-sm" id="btn-logs" title="Logs">📋</button>
             <button class="btn btn-ghost" id="btn-info" title="Tool Guide" style="font-size:22px;padding:2px 6px;line-height:1;">ℹ️</button>
         </div>

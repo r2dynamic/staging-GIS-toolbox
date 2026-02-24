@@ -26,6 +26,9 @@ class DrawManager {
         this._finishing = false;
         this._lastTapTime = 0;
 
+        // Guard: skip a dblclick that arrives after finish + restart
+        this._skipNextDblClick = false;
+
         // Mapbox preview ids
         this._previewSrcId   = '_draw-preview-src';
         this._previewLineId  = '_draw-preview-line';
@@ -119,10 +122,11 @@ class DrawManager {
         this._tool = tool;
         this._vertices = [];
         this._finishing = false;
+        this._skipNextDblClick = false;
         this._updateToolButtons();
 
         if (mapManager._selectionMode) mapManager.exitSelectionMode();
-        this.map.getContainer().style.cursor = 'crosshair';
+        this.map.getCanvas().style.cursor = 'crosshair';
 
         this._clickHandler    = (e) => this._onMapClick(e);
         this._moveHandler     = (e) => this._onMapMove(e);
@@ -166,7 +170,7 @@ class DrawManager {
         this._updateFinishBtn();
 
         if (this._clickTimeout) { clearTimeout(this._clickTimeout); this._clickTimeout = null; }
-        if (this.map) { this.map.getContainer().style.cursor = ''; this.map.doubleClickZoom.enable(); }
+        if (this.map) { this.map.getCanvas().style.cursor = ''; this.map.doubleClickZoom.enable(); }
 
         if (this._clickHandler)    { this.map?.off('click', this._clickHandler);    this._clickHandler = null; }
         if (this._moveHandler)     { this.map?.off('mousemove', this._moveHandler); this._moveHandler = null; }
@@ -181,6 +185,7 @@ class DrawManager {
 
     _onMapClick(e) {
         if (e.originalEvent) { e.originalEvent.stopPropagation(); e.originalEvent._drawHandled = true; }
+        e._handled = true;
         if (this._finishing) return;
 
         // Mapbox uses lngLat instead of Leaflet's latlng
@@ -240,6 +245,9 @@ class DrawManager {
 
     _onMapDblClick(e) {
         if (e.originalEvent) { e.originalEvent.preventDefault(); e.originalEvent.stopPropagation(); e.originalEvent._drawHandled = true; }
+        e._handled = true;
+        if (this._skipNextDblClick) { this._skipNextDblClick = false; return; }
+        if (this._finishing) return;
         if (this._clickTimeout) { clearTimeout(this._clickTimeout); this._clickTimeout = null; }
         if (e.lngLat) this._addVertex(e.lngLat.lat, e.lngLat.lng);
         const min = this._tool === 'polygon' ? 3 : 2;
@@ -355,6 +363,7 @@ class DrawManager {
             const currentTool = this._tool;
             this.cancelDraw();
             this.startTool(currentTool);
+            this._skipNextDblClick = true;
         }
     }
 }
